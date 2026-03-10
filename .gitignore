@@ -1,0 +1,12 @@
+# Environment variables
+.env
+
+# Service persistent data
+service-data/*
+!service-data/.gitkeep
+
+# System files
+.DS_Store
+node_modules/
+dist/
+*.log

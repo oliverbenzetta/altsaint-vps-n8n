@@ -1,0 +1,185 @@
+# Container Name: N8N
+# File Name: docker-compose.yml
+# Description: Docker Compose configuration for the N8N workflow automation platform, including PostgreSQL and Qdrant.
+# Docker Internal Network: altsaint-net
+# Version: 1.0.0
+# Author: Alt Saint Group LTD
+
+networks:
+  altsaint-net:
+    # Define the internal network for inter-service communication
+    name: altsaint-net
+    external: true
+
+services:
+  # PostgreSQL database service for N8N
+  postgres:
+    image: postgres:16-alpine
+    container_name: n8n-postgres
+    restart: unless-stopped
+    # Use the UID/GID from the .env file for volume permissions
+    user: "${UID}:${GID}"
+    # Load environment variables from the .env file
+    env_file:
+      - .env
+    environment:
+      # Standardized PostgreSQL environment variables
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+
+    volumes:
+      # Persistent storage for PostgreSQL data
+      - ./service-data/postgres-data:/var/lib/postgresql/data
+
+    ports:
+      # External port for optional external access to the database
+      - "${DB_EXTERNAL_PORT}:5432"
+
+    networks:
+      - altsaint-net
+
+    healthcheck:
+      # Health check to ensure the database is ready before N8N starts
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Qdrant vector store service
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: qdrant
+    restart: unless-stopped
+    # Load environment variables from the .env file
+    env_file:
+      - .env
+    environment:
+      # Timezone setting
+      - TZ=${TZ}
+    ports:
+      # Expose Qdrant REST API and Dashboard
+      - "6333:6333"
+    volumes:
+      # Persistent storage for Qdrant data
+      - ./service-data/qdrant-storage:/qdrant/storage
+      - ./service-data/qdrant-snapshots:/qdrant/snapshots
+    networks:
+      - altsaint-net
+
+  # Redis para Memoria de Agentes de IA
+  redis:
+    image: redis:7-alpine
+    container_name: n8n-redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    networks:
+      - altsaint-net
+    volumes:
+      - ./service-data/redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # N8N MCP Server
+  n8n-mcp:
+    image: ghcr.io/czlonkowski/n8n-mcp:latest
+    container_name: n8n-mcp
+    restart: unless-stopped
+    environment:
+      - N8N_API_URL=http://n8n:5678/api/v1
+      - N8N_API_KEY=${MCP_N8N_API_KEY}
+      - MCP_MODE=http
+      - AUTH_TOKEN=${MCP_AUTH_TOKEN}
+    ports:
+      - "${MCP_PORT:-3000}:3000"
+    networks:
+      - altsaint-net
+    depends_on:
+      n8n:
+        condition: service_started
+
+  # N8N core service
+  n8n:
+
+    # Build the image from the local Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+
+    # Build the image using the latest N8N image from Docker Hub
+    # image: n8nio/n8n:1.123.4
+    image: n8nio/n8n:latest
+
+    # Container name for easy identification
+    container_name: n8n
+
+    # Expose the N8N web interface port
+    ports:
+      - "5678:5678"
+
+    # Always restart the container unless it is explicitly stopped  
+    restart: unless-stopped
+
+    # Load environment variables from the .env file
+    env_file:
+      - .env
+
+    # Environment variables for N8N configuration
+    environment:
+      # Timezone and generic timezone settings
+      - TZ=${TZ}
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+
+      # Host and proxy settings for N8N
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=${N8N_PORT}
+      - N8N_PROTOCOL=${N8N_PROTOCOL}
+      - N8N_EDITOR_BASE_URL=${N8N_EDITOR_BASE_URL}
+      - N8N_API_BASE_URL=${N8N_API_BASE_URL}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+      - N8N_PROXY_HOPS=${N8N_PROXY_HOPS}
+      - N8N_TRUSTED_PROXIES=${N8N_TRUSTED_PROXIES}
+      - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE}
+
+      # Security and compatibility settings
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=${N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS}
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=${N8N_BLOCK_ENV_ACCESS_IN_NODE}
+      - N8N_GIT_NODE_DISABLE_BARE_REPOS=${N8N_GIT_NODE_DISABLE_BARE_REPOS}
+      - N8N_RUNNERS_ENABLED=${N8N_RUNNERS_ENABLED}
+      # - N8N_LOG_LEVEL=${N8N_LOG_LEVEL}
+
+      # Database configuration for N8N (using standardized names)
+      - DB_TYPE=${DB_TYPE} # Define the database type (e.g., postgresdb)
+      - DB_POSTGRESDB_HOST=${DB_HOST} # Postgres host
+      - DB_POSTGRESDB_PORT=${DB_PORT} # Postgres port
+      - DB_POSTGRESDB_DATABASE=${DB_NAME} # Postgres database name
+      - DB_POSTGRESDB_USER=${DB_USER} # Postgres user 
+      - DB_POSTGRESDB_PASSWORD=${DB_PASSWORD} # Postgres password
+
+      # Qdrant configuration
+      - QDRANT_BASE_URL=${QDRANT_BASE_URL}
+      # - QDRANT_API_KEY=${QDRANT_API_KEY}
+
+      # Redis configuration for N8N
+      - REDIS_HOST=${REDIS_HOST} # Use http://redis if you want to connect via HTTP, or just redis for internal Docker network
+      - REDIS_PORT=${REDIS_PORT}
+      # - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+    depends_on:
+      # Wait for the database to be healthy and Qdrant to be started
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    volumes:
+      # Persistent storage for N8N data, shared files, and backups
+      - ./service-data/n8n-data:/home/node/.n8n
+      - ./service-data/n8n-shared:/files
+      - ./service-data/backups:/home/node/backups
+    networks:
+      - altsaint-net
