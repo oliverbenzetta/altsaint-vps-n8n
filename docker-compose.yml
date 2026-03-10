@@ -141,7 +141,6 @@ services:
       - N8N_EDITOR_BASE_URL=${N8N_EDITOR_BASE_URL}
       - N8N_API_BASE_URL=${N8N_API_BASE_URL}
       - WEBHOOK_URL=${WEBHOOK_URL}
-      - N8N_PUSH_BACKEND=${N8N_PUSH_BACKEND}
       - N8N_PROXY_HOPS=${N8N_PROXY_HOPS}
       - N8N_TRUSTED_PROXIES=${N8N_TRUSTED_PROXIES}
       - N8N_SECURE_COOKIE=${N8N_SECURE_COOKIE}
@@ -152,10 +151,6 @@ services:
       - N8N_GIT_NODE_DISABLE_BARE_REPOS=${N8N_GIT_NODE_DISABLE_BARE_REPOS}
       - N8N_RUNNERS_ENABLED=${N8N_RUNNERS_ENABLED}
       # - N8N_LOG_LEVEL=${N8N_LOG_LEVEL}
-
-      # Disable telemetry and diagnostics
-      - N8N_DIAGNOSTICS_ENABLED=false
-      - N8N_PERSONALIZATION_ENABLED=false
 
       # Database configuration for N8N (using standardized names)
       - DB_TYPE=${DB_TYPE} # Define the database type (e.g., postgresdb)
