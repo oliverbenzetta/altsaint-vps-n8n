@@ -152,6 +152,10 @@ services:
       - N8N_RUNNERS_ENABLED=${N8N_RUNNERS_ENABLED}
       # - N8N_LOG_LEVEL=${N8N_LOG_LEVEL}
 
+      # Disable telemetry and diagnostics
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_PERSONALIZATION_ENABLED=false
+
       # Database configuration for N8N (using standardized names)
       - DB_TYPE=${DB_TYPE} # Define the database type (e.g., postgresdb)
       - DB_POSTGRESDB_HOST=${DB_HOST} # Postgres host
