@@ -105,14 +105,10 @@ services:
   # N8N core service
   n8n:
 
-    # Build the image from the local Dockerfile
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
-
     # Build the image using the latest N8N image from Docker Hub
     # image: n8nio/n8n:1.123.4
-    image: n8nio/n8n:latest
+    # image: n8nio/n8n:latest
+    image: n8nio/n8n:2.10.0
 
     # Container name for easy identification
     container_name: n8n

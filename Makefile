@@ -44,8 +44,6 @@ rebuild:
 	# Pull the latest images from the registry
 	docker compose pull
 
-	# Rebuild all images without cache
-	docker compose build --no-cache
 
 	# Start the full stack in detached mode
 	docker compose up -d
