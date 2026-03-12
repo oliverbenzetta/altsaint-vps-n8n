@@ -88,6 +88,6 @@ restore .
 
 - Qdrant is only exposed inside the internal network unless port mappings are modified.
 - If you need custom n8n modules or nodes, you can extend the stack by adding a
-  custom `Dockerfile` and enabling the build block in `docker-compose.yml`.
+  custom `Dockerfile` and enabling a `build` block in `docker-compose.yml`.
 - The `service-data` directory is intentionally ignored by Git (except for `.gitkeep`)
   to prevent committing large or sensitive data.
