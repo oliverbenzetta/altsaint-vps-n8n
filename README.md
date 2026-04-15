@@ -57,7 +57,7 @@ restore .
    make up
    ```
 
-4. Access n8n through the Docker tunnel attached to `altsaint-net`.
+4. Access n8n through the host/protocol you set in `.env`.
 
 5. Stop and remove all containers:
    ```
@@ -84,41 +84,68 @@ restore .
    make rebuild
    ```
 
-## Running an additional instance
+## Managing multiple instances
 
-To run a second instance of this stack on the same Docker host, use a separate
-copy of this repository or a separate deployment directory. This keeps each
-instance's `service-data/` directory isolated.
+This stack supports multiple n8n instances on the same Docker host, such as
+`n8n-production`, `n8n-staging`, and `n8n-custom`.
 
-Before starting the new instance, update its `.env` file:
+Use a separate copy of this repository or a separate deployment directory for
+each instance. This keeps each instance's `.env` file and `service-data/`
+directory isolated.
 
-1. Set a unique project name:
-   ```
-   COMPOSE_PROJECT_NAME=n8n-staging
-   ```
+Each instance must have:
 
-   Use a different value for each instance, for example `n8n-production`,
-   `n8n-staging`, or `n8n-client-a`. This value is used to generate container
-   names such as `${COMPOSE_PROJECT_NAME}-postgres`,
-   `${COMPOSE_PROJECT_NAME}-qdrant`, `${COMPOSE_PROJECT_NAME}-redis`, and
-   `${COMPOSE_PROJECT_NAME}-mcp`.
+- A unique `COMPOSE_PROJECT_NAME`.
+- A unique set of host ports.
+- Its own public URLs or tunnel routes.
 
-2. Keep the stack private on the Docker network. Services are not published to
-   host ports; the Docker tunnel should route traffic to the target container
-   through `altsaint-net`.
+Recommended host port allocation:
 
-   For this staging instance, the tunnel should target:
+| Instance | `COMPOSE_PROJECT_NAME` | `N8N_IP_HOST_PORT` | `DB_EXTERNAL_PORT` | `QDRANT_HOST_PORT` | `MCP_PORT` |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Production | `n8n-production` | `5678` | `5432` | `6333` | `3000` |
+| Staging | `n8n-staging` | `5679` | `5434` | `6334` | `3001` |
+| Custom | `n8n-custom` | `5680` | `5435` | `6335` | `3002` |
 
-   ```
-   http://n8n-staging:5678
-   ```
+Example `.env` values for staging:
 
-3. Update the public URLs to match the domain exposed by the tunnel:
-   ```
-   N8N_EDITOR_BASE_URL=https://n8n-staging.altsaint.com
-   N8N_API_BASE_URL=https://n8n-staging.altsaint.com
-   WEBHOOK_URL=https://n8n-staging.altsaint.com/
-   ```
+```
+COMPOSE_PROJECT_NAME=n8n-staging
+N8N_IP_HOST_PORT=5679
+DB_EXTERNAL_PORT=5434
+QDRANT_HOST_PORT=6334
+MCP_PORT=3001
+```
+
+Example `.env` values for a custom instance:
+
+```
+COMPOSE_PROJECT_NAME=n8n-custom
+N8N_IP_HOST_PORT=5680
+DB_EXTERNAL_PORT=5435
+QDRANT_HOST_PORT=6335
+MCP_PORT=3002
+```
+
+The container ports stay the same across all instances:
+
+| Service | Internal container port |
+| --- | ---: |
+| n8n | `5678` |
+| PostgreSQL | `5432` |
+| Qdrant | `6333` |
+| n8n MCP | `3000` |
+
+Only the host-side ports must change between instances.
+
+If an instance is behind a reverse proxy or Docker tunnel, keep these URLs
+aligned with the domain and protocol exposed publicly:
+
+```
+N8N_EDITOR_BASE_URL=https://n8n-staging.altsaint.com
+N8N_API_BASE_URL=https://n8n-staging.altsaint.com
+WEBHOOK_URL=https://n8n-staging.altsaint.com/
+```
 
 After updating `.env`, start the new instance from its own directory:
 
@@ -128,8 +155,7 @@ make up
 
 ## Notes
 
-- Services are exposed only inside `altsaint-net`; public access should go
-  through the Docker tunnel.
+- Qdrant is only exposed inside the internal network unless port mappings are modified.
 - If you need custom n8n modules or nodes, you can extend the stack by adding a
   custom `Dockerfile` and enabling a `build` block in `docker-compose.yml`.
 - The `service-data` directory is intentionally ignored by Git (except for `.gitkeep`)
