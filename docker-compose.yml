@@ -15,7 +15,7 @@ services:
   # PostgreSQL database service for N8N
   postgres:
     image: postgres:16-alpine
-    container_name: n8n-postgres
+    container_name: ${COMPOSE_PROJECT_NAME}-postgres
     restart: unless-stopped
     # Use the UID/GID from the .env file for volume permissions
     user: "${UID}:${GID}"
@@ -50,7 +50,7 @@ services:
   # Qdrant vector store service
   qdrant:
     image: qdrant/qdrant:latest
-    container_name: qdrant
+    container_name: ${COMPOSE_PROJECT_NAME}-qdrant
     restart: unless-stopped
     # Load environment variables from the .env file
     env_file:
@@ -60,7 +60,7 @@ services:
       - TZ=${TZ}
     ports:
       # Expose Qdrant REST API and Dashboard
-      - "6333:6333"
+      - "${QDRANT_HOST_PORT}:6333"
     volumes:
       # Persistent storage for Qdrant data
       - ./service-data/qdrant-storage:/qdrant/storage
@@ -71,7 +71,7 @@ services:
   # Redis para Memoria de Agentes de IA
   redis:
     image: redis:7-alpine
-    container_name: n8n-redis
+    container_name: ${COMPOSE_PROJECT_NAME}-redis
     restart: unless-stopped
     command: redis-server --save 60 1 --loglevel warning
     networks:
@@ -87,7 +87,7 @@ services:
   # N8N MCP Server
   n8n-mcp:
     image: ghcr.io/czlonkowski/n8n-mcp:latest
-    container_name: n8n-mcp
+    container_name: ${COMPOSE_PROJECT_NAME}-mcp
     restart: unless-stopped
     environment:
       - N8N_API_URL=http://n8n:5678/api/v1
@@ -95,7 +95,7 @@ services:
       - MCP_MODE=http
       - AUTH_TOKEN=${MCP_AUTH_TOKEN}
     ports:
-      - "${MCP_PORT:-3000}:3000"
+      - "${MCP_PORT}:3000"
     networks:
       - altsaint-net
     depends_on:
@@ -111,11 +111,11 @@ services:
     image: n8nio/n8n:2.10.0
 
     # Container name for easy identification
-    container_name: n8n
+    container_name: ${COMPOSE_PROJECT_NAME}
 
     # Expose the N8N web interface port
     ports:
-      - "5678:5678"
+      - "${N8N_IP_HOST_PORT}:5678"
 
     # Always restart the container unless it is explicitly stopped  
     restart: unless-stopped
