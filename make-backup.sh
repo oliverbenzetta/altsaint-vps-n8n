@@ -23,8 +23,8 @@ mkdir -p "$BACKUP_DIR"/n8n-postgres-backups
 
 # Dump Postgres database from inside the container
 # The script uses the standard PostgreSQL environment variables (DB_USER, DB_NAME)
-# which are set in the n8n-postgres container via the .env file
-docker exec n8n-postgres sh -c 'pg_dump -U "$DB_USER" "$DB_NAME"' \
+# which are set in the postgres service via the .env file
+docker compose exec -T postgres sh -c 'pg_dump -U "$DB_USER" "$DB_NAME"' \
   > "$BACKUP_DIR/n8n-postgres-backups/postgres-$TIMESTAMP.sql"
 
 # Save the Postgres dump without timestamp for easy access

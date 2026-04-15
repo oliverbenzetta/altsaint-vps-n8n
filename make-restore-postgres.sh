@@ -33,18 +33,18 @@ echo "Stopping n8n application container..."
 docker compose stop n8n
 
 # Drop and recreate the public schema inside the existing database
-# Uses environment variables DB_USER and DB_NAME defined in the n8n-postgres container
+# Uses environment variables DB_USER and DB_NAME defined in the postgres service
 echo "Dropping existing public schema in database..."
-docker exec n8n-postgres sh -c '
+docker compose exec -T postgres sh -c '
   psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c "DROP SCHEMA IF EXISTS public CASCADE;"
 '
 echo "Recreating public schema..."
-docker exec n8n-postgres sh -c '
+docker compose exec -T postgres sh -c '
   psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1 -c "CREATE SCHEMA public AUTHORIZATION \"$DB_USER\";"
 '
 # Restore the database by feeding SQL into psql inside the container
 echo "Restoring database from: $RESTORE_PATH"
-docker exec -i n8n-postgres sh -c '
+docker compose exec -T postgres sh -c '
   psql -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=1
 ' < "$RESTORE_PATH"
 

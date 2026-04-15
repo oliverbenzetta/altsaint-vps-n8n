@@ -50,7 +50,7 @@ rebuild:
 
 # Connect to Redis CLI
 redis-shell:
-	docker exec -it n8n-redis redis-cli
+	docker compose exec redis redis-cli
 
 # Connect N8N container to the internal network
 add-to-altsaint-net:
