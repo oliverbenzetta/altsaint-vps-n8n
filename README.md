@@ -57,7 +57,7 @@ restore .
    make up
    ```
 
-4. Access n8n through the host/protocol you set in `.env`.
+4. Access n8n through the Docker tunnel attached to `altsaint-net`.
 
 5. Stop and remove all containers:
    ```
@@ -103,28 +103,22 @@ Before starting the new instance, update its `.env` file:
    `${COMPOSE_PROJECT_NAME}-qdrant`, `${COMPOSE_PROJECT_NAME}-redis`, and
    `${COMPOSE_PROJECT_NAME}-mcp`.
 
-2. Set unique host ports for every service published to the Docker host:
+2. Keep the stack private on the Docker network. Services are not published to
+   host ports; the Docker tunnel should route traffic to the target container
+   through `altsaint-net`.
+
+   For this staging instance, the tunnel should target:
+
    ```
-   N8N_IP_HOST_PORT=5679
-   DB_EXTERNAL_PORT=5433
-   QDRANT_HOST_PORT=6334
-   MCP_PORT=3001
+   http://n8n-staging:5678
    ```
 
-   These variables must not reuse ports already published by another running
-   instance. The internal container ports stay the same; only the host-side
-   ports need to change.
-
-3. If the n8n instance is accessed directly through one of these host ports,
-   update the public URLs to match the selected `N8N_IP_HOST_PORT`:
+3. Update the public URLs to match the domain exposed by the tunnel:
    ```
-   N8N_EDITOR_BASE_URL=http://your-hostname:5679
-   N8N_API_BASE_URL=http://your-hostname:5679
-   WEBHOOK_URL=http://your-hostname:5679/
+   N8N_EDITOR_BASE_URL=https://n8n-staging.altsaint.com
+   N8N_API_BASE_URL=https://n8n-staging.altsaint.com
+   WEBHOOK_URL=https://n8n-staging.altsaint.com/
    ```
-
-   If the instance is behind a reverse proxy, keep these URLs aligned with the
-   domain and protocol exposed by the proxy.
 
 After updating `.env`, start the new instance from its own directory:
 
@@ -134,7 +128,8 @@ make up
 
 ## Notes
 
-- Qdrant is only exposed inside the internal network unless port mappings are modified.
+- Services are exposed only inside `altsaint-net`; public access should go
+  through the Docker tunnel.
 - If you need custom n8n modules or nodes, you can extend the stack by adding a
   custom `Dockerfile` and enabling a `build` block in `docker-compose.yml`.
 - The `service-data` directory is intentionally ignored by Git (except for `.gitkeep`)

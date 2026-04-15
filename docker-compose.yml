@@ -33,10 +33,6 @@ services:
       # Persistent storage for PostgreSQL data
       - ./service-data/postgres-data:/var/lib/postgresql/data
 
-    ports:
-      # External port for optional external access to the database
-      - "${DB_EXTERNAL_PORT}:5432"
-
     networks:
       - altsaint-net
 
@@ -58,9 +54,6 @@ services:
     environment:
       # Timezone setting
       - TZ=${TZ}
-    ports:
-      # Expose Qdrant REST API and Dashboard
-      - "${QDRANT_HOST_PORT}:6333"
     volumes:
       # Persistent storage for Qdrant data
       - ./service-data/qdrant-storage:/qdrant/storage
@@ -94,8 +87,6 @@ services:
       - N8N_API_KEY=${MCP_N8N_API_KEY}
       - MCP_MODE=http
       - AUTH_TOKEN=${MCP_AUTH_TOKEN}
-    ports:
-      - "${MCP_PORT}:3000"
     networks:
       - altsaint-net
     depends_on:
@@ -112,10 +103,6 @@ services:
 
     # Container name for easy identification
     container_name: ${COMPOSE_PROJECT_NAME}
-
-    # Expose the N8N web interface port
-    ports:
-      - "${N8N_IP_HOST_PORT}:5678"
 
     # Always restart the container unless it is explicitly stopped  
     restart: unless-stopped
