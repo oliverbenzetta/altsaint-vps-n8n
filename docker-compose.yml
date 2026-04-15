@@ -92,7 +92,8 @@ services:
 
   # N8N core service
   n8n:
-    image: n8nio/n8n:2.15.0 #image: n8nio/n8n:2.10.0
+    # image: n8nio/n8n:2.15.0 
+    image: n8nio/n8n:2.10.0
     container_name: ${COMPOSE_PROJECT_NAME}
     ports:
       - "${N8N_IP_HOST_PORT}:5678"
